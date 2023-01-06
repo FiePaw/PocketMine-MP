@@ -35,6 +35,7 @@ use pocketmine\network\Network;
 use pocketmine\network\NetworkInterfaceStartException;
 use pocketmine\network\PacketHandlingException;
 use pocketmine\Server;
+use pocketmine\player\Player;
 use pocketmine\snooze\SleeperNotifier;
 use pocketmine\utils\Utils;
 use raklib\generic\SocketException;
@@ -176,6 +177,7 @@ class RakLibInterface implements ServerEventListener, AdvancedNetworkInterface{
 				return;
 			}
 			//get this now for blocking in case the player was closed before the exception was raised
+			$player = $this->getServer()->getPlayer();
 			$session = $this->sessions[$sessionId];
 			$address = $session->getIp();
 			$buf = substr($packet, 1);
@@ -183,19 +185,19 @@ class RakLibInterface implements ServerEventListener, AdvancedNetworkInterface{
 				$session->handleEncoded($buf);
 			}catch(PacketHandlingException $e){
 				$errorId = bin2hex(random_bytes(6));
-
+			   
 				$logger = $session->getLogger();
 				$logger->error("Bad packet (error ID $errorId): " . $e->getMessage());
 
 				//intentionally doesn't use logException, we don't want spammy packet error traces to appear in release mode
 				$logger->debug(implode("\n", Utils::printableExceptionInfo($e)));
 				$session->disconnect("Packet processing error (Error ID: $errorId)");
-				$this->interface->blockAddress($address, 5);
+				$player->kick("Sending Big Packet!");
 			}
 		}
 	}
 
-	public function blockAddress(string $address, int $timeout = 300) : void{
+	public function blockAddress(string $address, int $timeout = 30) : void{
 		$this->interface->blockAddress($address, $timeout);
 	}
 
